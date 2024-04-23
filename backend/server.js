@@ -9,7 +9,7 @@ const server = express()
 
 server.use(express.json())
 
-server.use(express.static(path.join(__dirname, '../dist')))
+ server.use(express.static(path.join(__dirname, '../dist')))
 
 server.use(cors())
 
