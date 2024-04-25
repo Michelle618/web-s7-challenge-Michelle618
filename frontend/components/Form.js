@@ -12,11 +12,18 @@ const validationErrors = {
 // 👇 Here you will create your schema.
 const orderSchema = Yup.object().shape({
     fullName: Yup.string()
-    .min(3, 'full name must be at leat 3 characters')
-    .max(20, 'full name must be at most 20 characters')
+    .min(3, validationErrors.fullNameTooShort)
+    .max(20, validationErrors.fullNameTooLong)
     .required('Required'),
-    size: Yup.string().required('size is required')
-    
+    size: Yup.string().required(validationErrors.sizeIncorrect),
+    pepperoni:Yup.boolean(),
+    greenPeppers:Yup.boolean(),
+    pineapple:Yup.boolean(),
+    mushrooms:Yup.boolean(),
+    ham:Yup.boolean(),
+  
+
+
 })
 
 
@@ -35,53 +42,78 @@ export default function Form() {
 const getInitialValues = () => ({
  fullName: "", 
   size:"",
-  toppings:[],
-  agreement: false,
+  pepperoni: false,
+  greenPeppers: false,
+  pineapple: false,
+  mushrooms: false,
+  ham: false,
+  // agreement: false,
 })
 const getInitialErrors = () => ({
   fullName: "", 
    size:"",
    toppings:"",
-   agreement:"",
+  //  agreement:"",
  })
  const [values, setValues] = useState(getInitialValues())
  const [errors, setErrors] =useState(getInitialErrors())
- const [serverSuccess, setServerSuccess] = useState()
- const [serverFailure, setServerFailure] = useState()
+ const [serverSuccess, setServerSuccess] = useState("")
+ const [serverFailure, setServerFailure] = useState("")
  const [formEnabled, setFormEnabled] = useState(false)
 
  useEffect(() =>{
   orderSchema.isValid(values).then(setFormEnabled)
  }, [values])
+ 
 
 const handleChange=(e) => {
-  const { name, type, value, checked } = e.target
-  const id = e.target.id
-  console.log(id)
+  let { name, type, value, checked } = e.target
+  console.log(name)
    setValues({
    ...values,
-    [id]: e.target.value
+   [name]: type === "checkbox" ? checked : value
    })
-   Yup.reach(orderSchema, e.target.id).validate(e.target.value)
+   Yup.reach(orderSchema, e.target.name).validate(e.target.value)
    .then(() => {
-    setErrors({...errors,[e.target.id]:""})
+    setErrors({...errors,[e.target.name]:""})
    })
    .catch(err => {
-    setErrors({...errors,[e.target.id]:err.errors[0]})
+  
+    setErrors({...errors,[e.target.name]:err.errors[0]})
    })
    }
+   
    const onSubmit = evt => {
     evt.preventDefault()
    
     axios.post('http://localhost:9009/api/order',values)
     .then(res =>{
+     
       setValues(getInitialValues())
-      setServerSuccess(res.data.message)
-      setServerFailure()
+      // create a variable that is template literal
+      // loop over data to find how many are true(variable called count)
+      let toppingsCount = 0
+      for (const property in values) {
+       if(values[property] === true) {
+        toppingsCount++
+       }
+      }
+   
+  
+      // should contain # of toppings as a # this is (the variable count)
+      // template literal needs res.data.message
+     let orderMessage = `Thank you for your order, ${values.fullName}! Your medium pizza with ${toppingsCount} toppings is on the way.`
+      // if count is zero, use res.data.message
+     let orderMessages = toppingsCount === 0? res.data.message: orderMessage
+     
+      // if count is >0, put count in place of 'no'
+      // const orderMessage = ``
+      setServerSuccess(orderMessages)
+      setServerFailure("")
        })
        .catch(err =>{
         setServerFailure(err.response.data.message)
-        setServerSuccess(res.data.message)
+        setServerSuccess("")
 
        }) 
       }
@@ -95,7 +127,7 @@ const handleChange=(e) => {
       <div className="input-group">
         <div>
           <label htmlFor="fullName">Full Name</label><br />
-          <input value={values.fullName} onChange={handleChange} placeholder="Type full name" id="fullName" type="text" />
+          <input value={values.fullName} onChange={handleChange} placeholder="Type full name" name='fullName' id="fullName" type="text" />
         </div>
         {errors.fullName && <div className='error'>{errors.fullName}</div>}
       </div>
@@ -103,7 +135,7 @@ const handleChange=(e) => {
       <div className="input-group">
         <div>
           <label htmlFor="size">Size</label><br />
-          <select id="size" value={values.size} onChange={handleChange}>
+          <select name="size" id="size" value={values.size} onChange={handleChange}>
             <option value="">----Choose Size----</option>
             {<option value="S">Small</option>}
            { <option value="M">Medium</option>}
@@ -117,46 +149,46 @@ const handleChange=(e) => {
         {}
         <label key="1">
           <input
-            name="Pepperoni"
+            name="pepperoni"
             type="checkbox"
             onChange={handleChange}
-            checked={values.toppings =='Pepperoni'}
+            checked={values.name}
           />
           Pepperoni<br />
         </label >
         <label key="2">
           <input
-          name="Green Peppers"
+          name="greenPeppers"
           type="checkbox"
           onChange={handleChange}
-          checked={values.toppings == 'Green Peppers'}
+          checked={values.name}
           />
           Green Peppers
           </label>
           <label key="3">
             <input
-            name="Pineapple"
+            name="pineapple"
             type="checkbox"
             onChange={handleChange}
-            checked={values.toppings == 'pineapple'}
+            checked={values.name}
             />
             Pineapple
         </label>
         <label key="4">
           <input
-          name="Mushrooms"
+          name="mushrooms"
           type="checkbox"
           onChange={handleChange}
-          checked={values.toppings == 'Mushrooms'}
+          checked={values.name}
           />
           Mushrooms
         </label>
       <label key="5">
           <input
-          name="Ham"
+          name="ham"
           type="checkbox"
           onChange={handleChange}
-          checked={values.toppings == 'Ham'}
+          checked={values.name}
           />
           Ham
         </label>
